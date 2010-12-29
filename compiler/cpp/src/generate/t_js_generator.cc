@@ -493,7 +493,7 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
 
   //members with arguments
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
-    string dval = declare_field(*m_iter,true,true);
+    string dval = declare_field(*m_iter,false,true);
     t_type* t = get_true_type((*m_iter)->get_type());
     if ((*m_iter)->get_value() != NULL && !(t->is_struct() || t->is_xception())) {
         dval = render_const_value((*m_iter)->get_type(), (*m_iter)->get_value());
@@ -795,7 +795,7 @@ void t_js_generator::generate_service_client(t_service* tservice) {
       indent() << "  this.output = output;" << endl <<
       indent() << "  this.pClass = pClass;" << endl <<
       indent() << "  this.seqid = 0;" << endl <<
-      indent() << "  this.reqs = {}" << endl;
+      indent() << "  this._reqs = {}" << endl;
   } else {
     f_service_ <<
       indent() << "  this.input  = input" << endl <<
@@ -974,14 +974,6 @@ void t_js_generator::generate_service_client(t_service* tservice) {
         endl;
 
 
-      // Careful, only return result if not a void function
-      if (!(*f_iter)->get_returntype()->is_void()) {
-        f_service_ <<
-          indent() << "if (null != result.success ) {" << endl <<
-          indent() << "  " << render_recv_return("result.success") << endl <<
-          indent() << "}" << endl;
-      }
-
       t_struct* xs = (*f_iter)->get_xceptions();
       const std::vector<t_field*>& xceptions = xs->get_members();
       vector<t_field*>::const_iterator x_iter;
@@ -989,6 +981,14 @@ void t_js_generator::generate_service_client(t_service* tservice) {
         f_service_ <<
           indent() << "if (null != result." << (*x_iter)->get_name() << ") {" << endl <<
           indent() << "  " << render_recv_throw("result." + (*x_iter)->get_name()) << endl <<
+          indent() << "}" << endl;
+      }
+
+      // Careful, only return result if not a void function
+      if (!(*f_iter)->get_returntype()->is_void()) {
+        f_service_ <<
+          indent() << "if (null != result.success ) {" << endl <<
+          indent() << "  " << render_recv_return("result.success") << endl <<
           indent() << "}" << endl;
       }
 
@@ -1206,9 +1206,9 @@ void t_js_generator::generate_deserialize_map_element(ofstream &out,
   t_field fval(tmap->get_val_type(), val);
 
   indent(out) <<
-    declare_field(&fkey, true, false) << endl;
+    declare_field(&fkey, false, false) << endl;
   indent(out) <<
-    declare_field(&fval, true, false) << endl;
+    declare_field(&fval, false, false) << endl;
 
   generate_deserialize_field(out, &fkey);
   generate_deserialize_field(out, &fval);
@@ -1501,6 +1501,8 @@ string t_js_generator::declare_field(t_field* tfield, bool init, bool obj) {
         result += " = null";
       }
     }
+  } else {
+    result += " = null";
   }
   return result;
 }
