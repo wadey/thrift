@@ -690,6 +690,10 @@ void t_js_generator::generate_service(t_service* tservice) {
     generate_service_interface(tservice);
     generate_service_client(tservice);
 
+    if (gen_node_) {
+      generate_service_processor(tservice);
+    }
+
     f_service_.close();
 }
 
@@ -699,7 +703,45 @@ void t_js_generator::generate_service(t_service* tservice) {
  * @param tservice The service to generate a server for.
  */
 void t_js_generator::generate_service_processor(t_service* tservice) {
+    vector<t_function*> functions = tservice->get_functions();
+    vector<t_function*>::iterator f_iter;
 
+    f_service_ <<
+        "var " << js_namespace(tservice->get_program()) << service_name_ << "Processor = " << 
+        "exports.Processor = function(handler) ";
+
+    scope_up(f_service_);
+
+    f_service_ << indent() << "this._handler = handler" << endl;
+
+    scope_down(f_service_);
+
+    // Generate the server implementation
+    indent(f_service_) <<
+        js_namespace(tservice->get_program()) << service_name_ << "Processor.prototype = function(input, output) ";
+
+    scope_up(f_service_);
+
+    f_service_ << indent() << "var r = input.readMessageBegin()" << endl
+               << indent() << "if (this['process_' + r.fname]) {" << endl
+               << indent() << "  return this['process_' + r.fname].call(this, r.rseqid, input, output)" << endl
+               << indent() << "} else {" << endl
+               << indent() << "  input.skip(Thrift.Type.STRUCT)" << endl
+               << indent() << "  input.readMessageEnd()" << endl
+               << indent() << "  var x = new Thrift.TApplicationException(Thrift.TApplicationException.Type.UNKNOWN_METHOD, 'Unknown function ' + r.fname)" << endl
+               << indent() << "  output.writeMessageBegin(r.fname, Thrift.MessageType.Exception, r.rseqid)" << endl
+               << indent() << "  x.write(output)" << endl
+               << indent() << "  output.writeMessageEnd()" << endl
+               << indent() << "  output.flush()" << endl
+               << indent() << "}" << endl;
+
+    scope_down(f_service_);
+    f_service_ << endl;
+
+    // Generate the process subfunctions
+    for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
+        generate_process_function(tservice, *f_iter);
+    }
 }
 
 /**
@@ -709,7 +751,70 @@ void t_js_generator::generate_service_processor(t_service* tservice) {
  */
 void t_js_generator::generate_process_function(t_service* tservice,
                                                  t_function* tfunction) {
+    indent(f_service_) <<
+        js_namespace(tservice->get_program()) << service_name_ << "Processor.prototype.process_" + tfunction->get_name() + " = function(seqid, input, output) ";
 
+    scope_up(f_service_);
+
+    string argsname =  js_namespace(program_)+ service_name_ + "_" + tfunction->get_name() + "_args";
+    string resultname =  js_namespace(program_)+ service_name_ + "_" + tfunction->get_name() + "_result";
+
+    f_service_ <<
+        indent() << "var args = new " << argsname << "()" << endl <<
+        indent() << "args.read(input)" << endl <<
+        indent() << "input.readMessageEnd()" << endl;
+
+    // Declare result for non oneway function
+    if (!tfunction->is_oneway()) {
+        f_service_ <<
+            indent() << "var result = " << resultname << "()" << endl;
+    }
+
+    // Generate the function call
+    t_struct* arg_struct = tfunction->get_arglist();
+    const std::vector<t_field*>& fields = arg_struct->get_members();
+    vector<t_field*>::const_iterator f_iter;
+
+    f_service_ <<
+      indent() << "this._handler." << tfunction->get_name() << "(";
+
+    bool first = true;
+    for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
+      if (first) {
+        first = false;
+      } else {
+        f_service_ << ", ";
+      }
+      f_service_ << "args." << (*f_iter)->get_name();
+    }
+
+    // Shortcut out here for oneway functions
+    if (tfunction->is_oneway()) {
+      f_service_ << ")" << endl;
+      scope_down(f_service_);
+      f_service_ << endl;
+      return;
+    }
+
+    if (!first) {
+        f_service_ << ", ";
+    }
+    f_service_ << "function(success) {" << endl;
+    indent_up();
+
+    f_service_ <<
+      indent() << "result.success = success" << endl <<
+      indent() << "output.writeMessageBegin(\"" << tfunction->get_name() <<
+        "\", Thrift.MessageType.REPLY, seqid)" << endl <<
+      indent() << "result.write(output)" << endl <<
+      indent() << "output.writeMessageEnd()" << endl <<
+      indent() << "output.flush()" << endl;
+
+    indent_down();
+    indent(f_service_) << "})" << endl;
+
+    scope_down(f_service_);
+    f_service_ << endl;
 }
 
 /**
