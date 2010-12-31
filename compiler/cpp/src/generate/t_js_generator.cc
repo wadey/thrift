@@ -707,7 +707,7 @@ void t_js_generator::generate_service_processor(t_service* tservice) {
     vector<t_function*>::iterator f_iter;
 
     f_service_ <<
-        "var " << js_namespace(tservice->get_program()) << service_name_ << "Processor = " << 
+        "var " << js_namespace(tservice->get_program()) << service_name_ << "Processor = " <<
         "exports.Processor = function(handler) ";
 
     scope_up(f_service_);
@@ -718,7 +718,7 @@ void t_js_generator::generate_service_processor(t_service* tservice) {
 
     // Generate the server implementation
     indent(f_service_) <<
-        js_namespace(tservice->get_program()) << service_name_ << "Processor.prototype = function(input, output) ";
+        js_namespace(tservice->get_program()) << service_name_ << "Processor.prototype.process = function(input, output) ";
 
     scope_up(f_service_);
 
