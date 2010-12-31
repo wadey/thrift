@@ -482,6 +482,8 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
   const vector<t_field*>& members = tstruct->get_members();
   vector<t_field*>::const_iterator m_iter;
 
+  indent_up();
+
   if (gen_node_) {
     if (is_exported) {
       out << "var " << js_namespace(tstruct->get_program()) << tstruct->get_name() << " = " <<
