@@ -770,7 +770,7 @@ void t_js_generator::generate_process_function(t_service* tservice,
     // Declare result for non oneway function
     if (!tfunction->is_oneway()) {
         f_service_ <<
-            indent() << "var result = " << resultname << "()" << endl;
+            indent() << "var result = new " << resultname << "()" << endl;
     }
 
     // Generate the function call
