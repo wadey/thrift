@@ -1100,15 +1100,14 @@ void t_js_generator::generate_service_client(t_service* tservice) {
           indent() << "if (null != result.success ) {" << endl <<
           indent() << "  " << render_recv_return("result.success") << endl <<
           indent() << "}" << endl;
-      }
-
-      // Careful, only return _result if not a void function
-      if ((*f_iter)->get_returntype()->is_void()) {
-        indent(f_service_) <<
-          "return" << endl;
-      } else {
         f_service_ <<
           indent() << render_recv_throw("\"" + (*f_iter)->get_name() + " failed: unknown result\"") << endl;
+      } else {
+          if (gen_node_) {
+            indent(f_service_) << "callback(null)" << endl;
+          } else {
+            indent(f_service_) << "return" << endl;
+          }
       }
 
       // Close function
@@ -1160,7 +1159,7 @@ void t_js_generator::generate_deserialize_field(ofstream &out,
   } else if (type->is_container()) {
     generate_deserialize_container(out, type, name);
   } else if (type->is_base_type() || type->is_enum()) {
-    indent(out) << "var rtmp = input.";
+    indent(out) << name << " = input.";
 
     if (type->is_base_type()) {
       t_base_type::t_base tbase = ((t_base_type*)type)->get_base();
@@ -1196,11 +1195,12 @@ void t_js_generator::generate_deserialize_field(ofstream &out,
     } else if (type->is_enum()) {
       out << "readI32()";
     }
+
+    if (!gen_node_) {
+        out << ".value";
+    }
+
     out << endl;
-
-    out <<name << " = rtmp.value"<<endl;
-
-
   } else {
     printf("DO NOT KNOW HOW TO DESERIALIZE FIELD '%s' TYPE '%s'\n",
            tfield->get_name().c_str(), type->get_name().c_str());
