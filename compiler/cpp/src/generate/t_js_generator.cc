@@ -728,7 +728,7 @@ void t_js_generator::generate_service_processor(t_service* tservice) {
                << indent() << "} else {" << endl
                << indent() << "  input.skip(Thrift.Type.STRUCT)" << endl
                << indent() << "  input.readMessageEnd()" << endl
-               << indent() << "  var x = new Thrift.TApplicationException(Thrift.TApplicationException.Type.UNKNOWN_METHOD, 'Unknown function ' + r.fname)" << endl
+               << indent() << "  var x = new Thrift.TApplicationException(Thrift.TApplicationExceptionType.UNKNOWN_METHOD, 'Unknown function ' + r.fname)" << endl
                << indent() << "  output.writeMessageBegin(r.fname, Thrift.MessageType.Exception, r.rseqid)" << endl
                << indent() << "  x.write(output)" << endl
                << indent() << "  output.writeMessageEnd()" << endl
@@ -1064,7 +1064,7 @@ void t_js_generator::generate_service_client(t_service* tservice) {
 
       f_service_ <<
           indent() << "if (mtype == Thrift.MessageType.EXCEPTION) {" << endl <<
-          indent() << "  var x = new Thrift.ApplicationException()" << endl <<
+          indent() << "  var x = new Thrift.TApplicationException()" << endl <<
           indent() << "  x.read(" << inputVar << ")" << endl <<
           indent() << "  " << inputVar << ".readMessageEnd()" << endl <<
           indent() << "  " << render_recv_throw("x") << endl <<
