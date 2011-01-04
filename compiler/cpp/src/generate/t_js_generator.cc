@@ -1487,8 +1487,11 @@ void t_js_generator::generate_serialize_container(ofstream &out,
     string viter = tmp("viter");
     indent(out) << "for(var "<<kiter<<" in "<<prefix<<")";
     scope_up(out);
+    indent(out) << "if ("<<prefix<<".hasOwnProperty("<<kiter<<"))" <<endl;
+    scope_up(out);
     indent(out) << "var "<<viter<<" = "<<prefix<<"["<<kiter<<"]"<<endl;
     generate_serialize_map_element(out, (t_map*)ttype, kiter, viter);
+    scope_down(out);
     scope_down(out);
 
 
@@ -1497,8 +1500,11 @@ void t_js_generator::generate_serialize_container(ofstream &out,
     indent(out) <<
       "for(var "<<iter<<" in " << prefix << ")" << endl;
     scope_up(out);
+    indent(out) << "if ("<<prefix<<".hasOwnProperty("<<iter<<"))" <<endl;
+    scope_up(out);
     indent(out) << iter << "=" << prefix << "[" << iter << "]"<< endl;
     generate_serialize_set_element(out, (t_set*)ttype, iter);
+    scope_down(out);
     scope_down(out);
 
 
@@ -1507,8 +1513,11 @@ void t_js_generator::generate_serialize_container(ofstream &out,
     indent(out) <<
         "for(var "<<iter<<" in "<< prefix << ")" << endl;
     scope_up(out);
+    indent(out) << "if ("<<prefix<<".hasOwnProperty("<<iter<<"))" <<endl;
+    scope_up(out);
     indent(out) << iter << "=" << prefix << "[" << iter << "]"<< endl;
     generate_serialize_list_element(out, (t_list*)ttype, iter);
+    scope_down(out);
     scope_down(out);
   }
 
