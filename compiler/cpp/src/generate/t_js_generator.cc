@@ -495,6 +495,12 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
     out << js_namespace(tstruct->get_program()) << tstruct->get_name() <<" = function(args){\n";
   }
 
+  if (gen_node_ && is_exception) {
+      out << indent() << "Thrift.TException.call(this, \"" <<
+          js_namespace(tstruct->get_program()) << tstruct->get_name() << "\")" << endl;
+      out << indent() << "this.name = \"" <<
+          js_namespace(tstruct->get_program()) << tstruct->get_name() << "\"" << endl;
+  }
 
   //members with arguments
   for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
@@ -535,12 +541,20 @@ void t_js_generator::generate_js_struct_definition(ofstream& out,
   out << "}\n";
 
   if (is_exception) {
-      out << "for (var property in Thrift.Exception)"<<endl<<
-          js_namespace(tstruct->get_program())<<tstruct->get_name()<<"[property] = Thrift.Exception[property]"<<endl;
+      if (gen_node_) {
+          out << "require('util').inherits(" <<
+              js_namespace(tstruct->get_program()) <<
+              tstruct->get_name() << ", Thrift.TException)" << endl;
+      } else {
+          out << "for (var property in Thrift.TException)"<<endl<<
+              js_namespace(tstruct->get_program())<<tstruct->get_name()<<"[property] = Thrift.TException[property]"<<endl;
+      }
   }
 
-  //init prototype
-  out << js_namespace(tstruct->get_program())<<tstruct->get_name() <<".prototype = {}\n";
+  if (!gen_node_) {
+      //init prototype
+      out << js_namespace(tstruct->get_program())<<tstruct->get_name() <<".prototype = {}\n";
+  }
 
 
   generate_js_struct_reader(out, tstruct);
